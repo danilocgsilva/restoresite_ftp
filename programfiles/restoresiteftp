@@ -30,6 +30,27 @@ ask_file() {
     fi
 }
 
+# ask_tar
+# Asks something, fill variable, asks again if nothing provided, check if it is a file and finally check if it is a tar file
+ask_tar() {
+    ask_file "$1" $2 "$3"
+    file ${!2} | grep -i gzip > /dev/null
+    # The parameter provided must be a gzip file
+    if [ $? -ne 0 ]; then
+        echo The provided file is not gzip!
+        ask_tar "$1" $2 "$3"
+    fi
+}
+
 
 ## 2. Script
-ask_file "Please, provides the backup pack: " backup_pack "You did not provided nothing!" 
+# 2.1 Make asks to fills the connections values
+ask_tar "Please, provides the backup pack: " backup_pack "You did not provided nothing!"
+ask "Provides the ftp server address: " ftp_server_address "You did not provided nothing as ftp server address."
+ask "Please, provides the ftp server path: " ftp_server_site_path "You did not provided nothing as server path."
+
+# 2.2 Actions post answers
+date=$(date +%Y%m%d-%Hh%Mm%Ss)
+tmp_folder=tmp-$date
+mkdir $tmp_folder
+tar xvzf $backup_pack -C $tmp_folder
