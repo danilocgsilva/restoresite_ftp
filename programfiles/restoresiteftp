@@ -1,0 +1,35 @@
+#!/bin/bash
+
+## 1. Functions definitions
+
+# ask()
+# Asks something, fill variable and asks again if nothing provided
+# $1: The question title.
+# $2: The variable name.
+# $3: The Title when the answer is not provided.
+ask() {
+    read -p "$1" $2
+    if [[ -z ${!2} ]]; then
+        echo "$3"
+        ask "$1" $2 "$3"
+        return
+    fi
+}
+
+# ask_file
+# Asks something, fill variable, asks again if nothing provided and check if it is a file provided.
+# $1: The question title.
+# $2: The variable name.
+# $3: The Title when the answer is not provided.
+ask_file() {
+    ask "$1" $2 "$3"
+    if [ ! -f ${!2} ]; then
+        echo The file provided \(${!2}\) does not exists!
+        ask_file "$1" $2 "$3"
+        return
+    fi
+}
+
+
+## 2. Script
+ask_file "Please, provides the backup pack: " backup_pack "You did not provided nothing!" 
