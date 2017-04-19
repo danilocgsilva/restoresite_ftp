@@ -1,5 +1,11 @@
 #!/bin/bash
 
+## 0. Check if ncftp exists in the system
+if ! which ncftp > /dev/null 2>&1; then
+    echo To the script work, you need first the ncftp available in the system.
+    exit
+fi
+
 ## 1. Functions definitions
 
 # ask()
@@ -9,6 +15,20 @@
 # $3: The Title when the answer is not provided.
 ask() {
     read -p "$1" $2
+    if [[ -z ${!2} ]]; then
+        echo "$3"
+        ask "$1" $2 "$3"
+        return
+    fi
+}
+
+# ask_secret()
+# Asks something, fill variable and asks again if nothing provided. Output not showed.
+# $1: The question title.
+# $2: The variable name.
+# $3: The Title when the answer is not provided.
+ask_secret() {
+    read -s -p "$1" $2
     if [[ -z ${!2} ]]; then
         echo "$3"
         ask "$1" $2 "$3"
@@ -48,9 +68,25 @@ ask_tar() {
 ask_tar "Please, provides the backup pack: " backup_pack "You did not provided nothing!"
 ask "Provides the ftp server address: " ftp_server_address "You did not provided nothing as ftp server address."
 ask "Please, provides the ftp server path: " ftp_server_site_path "You did not provided nothing as server path."
+ask "Provides the ftp username: " ftp_username "You did not provides nothing!"
+ask_secret "Finally, provides the ftp user password: " ftp_userpassword "You did provides nothing as password."
+
 
 # 2.2 Actions post answers
 date=$(date +%Y%m%d-%Hh%Mm%Ss)
 tmp_folder=tmp-$date
 mkdir $tmp_folder
 tar xvzf $backup_pack -C $tmp_folder
+cd $tmp_folder
+decompressed_folder=$(ls)
+cd $decompressed_folder
+copyfoldertoftp=$(find . -maxdepth 1 -type d | cut -c 3-)
+echo $copyfoldertoftp
+ncftpput -R -v -p $ftp_userpassword -u $ftp_username $ftp_server_address $ftp_server_site_path $copyfoldertoftp
+
+# echo ncftpput variables:
+# echo User: $ftp_username
+# echo Password: $ftp_userpassword
+# echo Server address: $ftp_server_address
+# echo Server path: $ftp_server_site_path
+# echo Actual folder name: $copyfoldertoftp
