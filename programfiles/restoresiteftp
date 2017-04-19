@@ -43,6 +43,7 @@ ask_secret() {
         ask "$1" $2 "$3"
         return
     fi
+    echo ""
 }
 
 # ask_file
@@ -90,15 +91,24 @@ tar xzf $backup_pack -C $tmp_folder
 cd $tmp_folder
 # May always have one folder
 decompressed_folder=$(ls | sed 1p)
+echo Decompressed folder: $decompressed_folder
 cd $decompressed_folder
 # The name of the local folder to be copied.
 copyfoldertoftp=$(find . -maxdepth 1 -type d | cut -c 3-)
+# echo ask_mysql_exists: $ask_mysql_exists
 # Tries to restore database.
-if [ $ask_mysql_exists -eq 1 ]; then
-    if ls | grep -p ^db.sql$; then
+if [[ $ask_mysql_exists -eq 1 ]]; then
+    # echo ask_mysql exists
+    # if [[ $(ls) ]]; then
+    #     echo database exists
+    #     source $ask_mysql_source
+    #     echo Restoring database...
+    #     mysql -u$mysql_user -p$mysql_databasepassword -h$mysql_host $mysql_database << 'db.sql'
+    # fi
+    if ls | grep ^db.sql$ > /dev/null; then
+        # echo SUCESSO!!!
+        # echo database exists
         source $ask_mysql_source
-        echo Restoring database...
-        mysql -u$mysql_user -p$mysql_databasepassword -h$mysql_host $mysql_database << 'db.sql'
     fi
 fi
 ncftpput -R -v -p $ftp_userpassword -u $ftp_username $ftp_server_address $ftp_server_site_path $copyfoldertoftp
