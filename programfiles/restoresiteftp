@@ -1,9 +1,18 @@
 #!/bin/bash
 
-## 0. Check if ncftp exists in the system
+## 0. Check if utilities exists in in the system
 if ! which ncftp > /dev/null 2>&1; then
     echo To the script work, you need first the ncftp available in the system.
     exit
+fi
+
+if ! which ask_mysql > /dev/null 2>&1; then
+    echo If your site pack have a database backuped, you need the ask_mysql utility. Get it from https://raw.githubusercontent.com/danilocgsilva/ask_mysql/master/programfiles/ask_mysql.
+    ask_mysql_exists=0
+    echo -p "Press enter to continue..." nonusable
+else
+    ask_mysql_exists=1
+    ask_mysql_source=$(which ask_mysql)
 fi
 
 ## 1. Functions definitions
@@ -76,12 +85,22 @@ ask_secret "Finally, provides the ftp user password: " ftp_userpassword "You did
 date=$(date +%Y%m%d-%Hh%Mm%Ss)
 tmp_folder=tmp-$date
 mkdir $tmp_folder
-tar xvzf $backup_pack -C $tmp_folder
+echo Decompressing...
+tar xzf $backup_pack -C $tmp_folder
 cd $tmp_folder
-decompressed_folder=$(ls)
+# May always have one folder
+decompressed_folder=$(ls | sed 1p)
 cd $decompressed_folder
+# The name of the local folder to be copied.
 copyfoldertoftp=$(find . -maxdepth 1 -type d | cut -c 3-)
-echo $copyfoldertoftp
+# Tries to restore database.
+if [ $ask_mysql_exists -eq 1 ]; then
+    if ls | grep -p ^db.sql$; then
+        source $ask_mysql_source
+        echo Restoring database...
+        mysql -u$mysql_user -p$mysql_databasepassword -h$mysql_host $mysql_database << 'db.sql'
+    fi
+fi
 ncftpput -R -v -p $ftp_userpassword -u $ftp_username $ftp_server_address $ftp_server_site_path $copyfoldertoftp
 
 # echo ncftpput variables:
